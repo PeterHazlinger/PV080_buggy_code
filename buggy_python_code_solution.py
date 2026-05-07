@@ -6,12 +6,16 @@ import urllib3
 
 app = flask.Flask(__name__)
 
+ALLOWED_URLS = {
+    "google": "https://www.google.com",
+}
+
 
 @app.route("/")
 def index():
     version = flask.request.args.get("urllib_version")
-    url = flask.request.args.get("url")
-    return fetch_website(version, url)
+    url_key = flask.request.args.get("url")
+    return fetch_website(version, url_key)
 
         
 CONFIG = {"API_KEY": "771df488714111d39138eb60df756e6b"}
@@ -24,10 +28,15 @@ def print_nametag(format_string, person):
     print(format_string.format(person=person))
 
 
-def fetch_website(urllib_version, url):
+def fetch_website(urllib_version, url_key):
     # Only allow supported urllib versions; avoid dynamic code execution.
     if str(urllib_version) not in {"3", "urllib3"}:
         return "Unsupported urllib version"
+
+    # Resolve user input through a server-side allowlist to prevent full SSRF.
+    url = ALLOWED_URLS.get(str(url_key))
+    if not url:
+        return "Unsupported URL"
 
     # Fetch and print the requested URL
     try:
